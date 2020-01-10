@@ -77,6 +77,10 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>FMI Basel</license.copyrightOwners>
 
+		<scijava-common.version>2.81.1-SNAPSHOT</scijava-common.version>
+		<scijava-ui-swing.version>0.13.1-SNAPSHOT</scijava-ui-swing.version>
+		<enforcer.skip>true</enforcer.skip>
+
 		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
@@ -105,6 +109,14 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>TrackMate_</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>legacy-imglib1</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>Descriptor_based_registration</artifactId>
 		</dependency>
 
 		<!-- Test dependencies -->
