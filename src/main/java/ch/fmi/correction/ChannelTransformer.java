@@ -3,6 +3,17 @@ package ch.fmi.correction;
 
 import java.util.ArrayList;
 
+import org.scijava.Initializable;
+import org.scijava.ItemIO;
+import org.scijava.command.Command;
+import org.scijava.command.DynamicCommand;
+import org.scijava.convert.ConvertService;
+import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+
+import ij.ImagePlus;
+import ij.process.LUT;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.ImageJ;
@@ -10,8 +21,6 @@ import net.imagej.axis.Axes;
 import net.imagej.axis.CalibratedAxis;
 import net.imagej.ops.OpService;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.concatenate.Concatenable;
-import net.imglib2.concatenate.PreConcatenable;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineRandomAccessible;
@@ -19,17 +28,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
-
-import org.scijava.Initializable;
-import org.scijava.ItemIO;
-import org.scijava.command.Command;
-import org.scijava.command.DynamicCommand;
-import org.scijava.convert.ConvertService;
-import org.scijava.plugin.Parameter;
-import org.scijava.plugin.Plugin;
-
-import ij.ImagePlus;
-import ij.process.LUT;
 
 @Plugin(type = Command.class, menuPath = "FMI > Multi-Channel Image Correction > Apply Channel Transformation")
 public class ChannelTransformer<T extends RealType<T>> extends DynamicCommand implements Initializable {
@@ -72,6 +70,9 @@ public class ChannelTransformer<T extends RealType<T>> extends DynamicCommand im
 	@Parameter
 	private ConvertService convertService;
 
+	@Parameter
+	private LogService logService;
+
 	@Override
 	public void run() {
 		// use ImagePlus input and convertService(imp, Dataset.class)
@@ -110,6 +111,8 @@ public class ChannelTransformer<T extends RealType<T>> extends DynamicCommand im
 
 		resultImp = convertService.convert(resultDataset, ImagePlus.class);
 		LUT[] luts = imp.getLuts();
+		logService.info("Number of LUTs: " + luts.length);
+
 		for (int i=1; i<= imp.getNChannels(); i++) {
 			resultImp.setPositionWithoutUpdate(i, 1, 1);
 			resultImp.setLut(luts[i-1]);
@@ -123,7 +126,7 @@ public class ChannelTransformer<T extends RealType<T>> extends DynamicCommand im
 
 	private RandomAccessibleInterval<T> transform(Dataset d, int channelIndex, AffineGet affine, AffineTransform3D calibration) {
 		RandomAccessibleInterval<T> singleChannel = extract(d, channelIndex);
-		AffineGet transform = calibration.preConcatenate(affine).preConcatenate(calibration.inverse());
+		AffineGet transform = calibration.inverse().preConcatenate(affine).preConcatenate(calibration);
 		AffineRandomAccessible<T, ?> transformed = RealViews
 				.affine(Views.interpolate(Views.extendZero(singleChannel), new NLinearInterpolatorFactory<T>()), transform);
 		return Views.interval(transformed, singleChannel);
