@@ -126,7 +126,8 @@ public class ChannelTransformer<T extends RealType<T>> extends DynamicCommand im
 
 	private RandomAccessibleInterval<T> transform(Dataset d, int channelIndex, AffineGet affine, AffineTransform3D calibration) {
 		RandomAccessibleInterval<T> singleChannel = extract(d, channelIndex);
-		AffineGet transform = calibration.inverse().preConcatenate(affine).preConcatenate(calibration);
+		AffineGet transform = calibration.copy().preConcatenate(affine).preConcatenate(calibration.inverse());
+		logService.info("Applying effective transform to channel index " + channelIndex + ": " + transform.toString());
 		AffineRandomAccessible<T, ?> transformed = RealViews
 				.affine(Views.interpolate(Views.extendZero(singleChannel), new NLinearInterpolatorFactory<T>()), transform);
 		return Views.interval(transformed, singleChannel);
