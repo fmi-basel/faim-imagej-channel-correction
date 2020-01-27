@@ -9,6 +9,7 @@ import java.util.Vector;
 
 import net.imglib2.realtransform.AffineGet;
 
+import org.scijava.ItemVisibility;
 import org.scijava.command.Command;
 import org.scijava.command.ContextCommand;
 import org.scijava.convert.ConvertService;
@@ -46,11 +47,17 @@ public class SpotCollectionAlignment extends ContextCommand {
 	private static final String RIGID_3D = "3d-rigid";
 	private static final String AFFINE_3D = "3d-affine";
 
+	@Parameter(visibility = ItemVisibility.MESSAGE, required = false, persist = false)
+	private String message1 = "----- Channel detections -----";
+
 	@Parameter(label = "Channel 1 Spots (reference)")
 	private SpotCollection spots1;
 
 	@Parameter(label = "Channel 2 Spots")
 	private SpotCollection spots2;
+
+	@Parameter(visibility = ItemVisibility.MESSAGE, required = false, persist = false)
+	private String message2 = "--- Optional third channel ---";
 
 	@Parameter(label = "Include another channel (3)")
 	private boolean process_ch3 = false;
@@ -58,25 +65,37 @@ public class SpotCollectionAlignment extends ContextCommand {
 	@Parameter(label = "Channel 3 Spots", required = false)
 	private SpotCollection spots3;
 
+	@Parameter(visibility = ItemVisibility.MESSAGE, required = false, persist = false)
+	private String message3 = "--- Optional fourth channel ---";
+
 	@Parameter(label = "Include another channel (4)")
 	private boolean process_ch4 = false;
 
 	@Parameter(label = "Channel 4 Spots", required = false)
 	private SpotCollection spots4;
 
+	@Parameter(visibility = ItemVisibility.MESSAGE, required = false, persist = false)
+	private String message4 = "----- Registration options -----";
+
 	@Parameter(choices = { TRANSLATION_2D, RIGID_2D, AFFINE_2D,
 		AFFINE_2D_TRANSLATION_3D, TRANSLATION_3D, RIGID_3D, SIMILARITY_3D,
 		AFFINE_3D })
 	private String transformationType = SIMILARITY_3D;
 
-	@Parameter(label = "Name to store transforms (will be pre-pended with C1-, C2- etc.")
+	@Parameter(label = "Name to store transforms")
 	private String transformName;
 
-	@Parameter(label = "Remember Transforms in current ImageJ instance")
-	private Boolean registerObjects;
+	@Parameter(visibility = ItemVisibility.MESSAGE, required = false, persist = false)
+	private String message5 = "The name will be pre-pended with C1-, C2- etc.";
+
+	@Parameter(label = "Register Point Correspondences with ObjectService")
+	private Boolean registerComparePairs = false;
+
+	@Parameter(label = "Register Transforms with ObjectService")
+	private Boolean registerTransforms = true;
 
 	@Parameter(label = "Save Transforms to Output Directory")
-	private Boolean saveTransforms;
+	private Boolean saveTransforms = false;
 
 	@Parameter(style = "directory", required = false)
 	private File outputDirectory;
@@ -119,6 +138,12 @@ public class SpotCollectionAlignment extends ContextCommand {
 		}
 		*/
 
+		if (registerComparePairs) {
+			comparePairs.forEach(p -> {
+				objectService.addObject(p, "ComparePair: " + objectService.getName(spotCollections.get(p.indexA)) + " <=>" + objectService.getName(spotCollections.get(p.indexB)));
+			});
+		}
+
 		ArrayList<InvertibleBoundable> models = Matching.globalOptimization(comparePairs, peakListList.size(), params);
 		if (models == null) {
 			logService.error("No transformation models could be found.");
@@ -132,7 +157,7 @@ public class SpotCollectionAlignment extends ContextCommand {
 
 		for (int i = 0; i < models.size(); i++) {
 			AffineGet affine = convertService.convert(models.get(i), AffineGet.class);
-			if (registerObjects) {
+			if (registerTransforms) {
 				objectService.addObject(affine, "C" + (i+1) + "-" + transformName);
 			}
 			if (saveTransforms) {
@@ -146,6 +171,7 @@ public class SpotCollectionAlignment extends ContextCommand {
 
 		// Quality assessment? Map of abs?({dx,dy,dz}) over xy plane for correspondences...
 		// => requires input image dimensions: separate plugin?
+		// TODO remember ComparePairs as named objects
 		// OUTPUT: one AffineGet for each non-reference channel
 	}
 

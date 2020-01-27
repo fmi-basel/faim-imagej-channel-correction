@@ -79,6 +79,7 @@
 
 		<scijava-common.version>2.81.1-SNAPSHOT</scijava-common.version>
 		<scijava-ui-swing.version>0.13.1-SNAPSHOT</scijava-ui-swing.version>
+		<imglib2.version>5.9.0-SNAPSHOT</imglib2.version>
 		<enforcer.skip>true</enforcer.skip>
 
 		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
